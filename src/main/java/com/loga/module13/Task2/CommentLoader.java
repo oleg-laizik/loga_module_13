@@ -6,54 +6,57 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Scanner;
+import com.google.gson.Gson;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 public class CommentLoader {
 
     private static final String BASE_URL = "https://jsonplaceholder.typicode.com";
+    private static final Gson gson = new Gson();
 
     public static void main(String[] args) throws IOException {
         int userId = 1;
-        int postId = getLatestPostIdForUser(userId);
+        int postId = getLatestPostId(userId);
         String fileName = "user-" + userId + "-post-" + postId + "-comments.json";
-        JSONArray comments = getCommentsForPost(postId);
-        saveCommentsToFile(fileName, comments);
+        String commentsJson = getCommentsJsonForPost(postId);
+        writeJsonToFile(commentsJson, fileName);
+        System.out.println("Comments for user " + userId + " post " + postId + " were written to file " + fileName);
     }
 
-    private static int getLatestPostIdForUser(int userId) throws IOException {
+    private static int getLatestPostId(int userId) throws IOException {
         String endpoint = BASE_URL + "/users/" + userId + "/posts";
-        JSONArray posts = getJsonArrayFromEndpoint(endpoint);
-        JSONObject latestPost = posts.getJSONObject(posts.length() - 1);
-        return latestPost.getInt("id");
+        String responseJson = makeRequest(endpoint);
+        Post[] posts = gson.fromJson(responseJson, Post[].class);
+        Post latestPost = posts[0];
+        for (Post post : posts) {
+            if (post.getId() > latestPost.getId()) {
+                latestPost = post;
+            }
+        }
+        return latestPost.getId();
     }
 
-    private static JSONArray getCommentsForPost(int postId) throws IOException {
+    private static String getCommentsJsonForPost(int postId) throws IOException {
         String endpoint = BASE_URL + "/posts/" + postId + "/comments";
-        return getJsonArrayFromEndpoint(endpoint);
+        return makeRequest(endpoint);
     }
 
-    private static JSONArray getJsonArrayFromEndpoint(String endpoint) throws IOException {
+    private static void writeJsonToFile(String json, String fileName) throws IOException {
+        try (FileWriter fileWriter = new FileWriter(fileName)) {
+            fileWriter.write(json);
+        }
+    }
+
+    private static String makeRequest(String endpoint) throws IOException {
         URL url = new URL(endpoint);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
-
+        connection.setDoOutput(true);
+        connection.connect();
         InputStream inputStream = connection.getInputStream();
-        String responseBody = new Scanner(inputStream, "UTF-8").useDelimiter("\\A").next();
-
-        return new JSONArray(responseBody);
-    }
-
-    private static void saveCommentsToFile(String fileName, JSONArray comments) throws IOException {
-        FileWriter fileWriter = new FileWriter(fileName);
-        fileWriter.write(comments.toString());
-        fileWriter.close();
-    }
-
-    private static void getCommentsAndSaveToFile(int userId, String fileName) throws IOException {
-        int postId = getLatestPostIdForUser(userId);
-        JSONArray comments = getCommentsForPost(postId);
-        saveCommentsToFile(fileName, comments);
+        Scanner scanner = new Scanner(inputStream, "UTF-8");
+        String response = scanner.useDelimiter("\\A").next();
+        scanner.close();
+        return response;
     }
 }

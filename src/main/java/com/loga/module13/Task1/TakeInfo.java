@@ -4,41 +4,37 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+
+import UtilsUser.User;
+import com.google.gson.Gson;
+
 public class TakeInfo {
 
+    private static final String BASE_URL = "https://jsonplaceholder.typicode.com/users/";
 
-        private static final String BASE_URL = "https://jsonplaceholder.typicode.com";
-
-        public static void main(String[] args) {
-            getUsers();
-        }
-
-        public static void getUsers() {
-            try {
-                URL url = new URL(BASE_URL + "/users");
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-                conn.setRequestProperty("Accept", "application/json");
-
-                if (conn.getResponseCode() != 200) {
-                    throw new RuntimeException("Failed : HTTP error code : "
-                            + conn.getResponseCode());
+    public static User getUserById(int id) {
+        User user = null;
+        try {
+            URL url = new URL(BASE_URL + id);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+            int responseCode = con.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(
+                        con.getInputStream()));
+                String inputLine;
+                StringBuffer response = new StringBuffer();
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
                 }
-
-                BufferedReader br = new BufferedReader(new InputStreamReader(
-                        (conn.getInputStream())));
-
-                String output;
-                System.out.println("Output from Server \n");
-                while ((output = br.readLine()) != null) {
-                    System.out.println(output);
-                }
-
-                conn.disconnect();
-            } catch (Exception e) {
-                e.printStackTrace();
+                in.close();
+                Gson gson = new Gson();
+                user = gson.fromJson(response.toString(), User.class);
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
+        return user;
     }
 
+}

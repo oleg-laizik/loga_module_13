@@ -1,49 +1,44 @@
 package com.loga.module13.Task1;
 
+import com.google.gson.Gson;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import UtilsUser.User;
+
 public class UpdateObject {
+    private static final String BASE_URL = "https://jsonplaceholder.typicode.com/users/";
 
-    private static final String BASE_URL = "https://jsonplaceholder.typicode.com";
+    public User updateUser(int userId, User updatedUser) throws Exception {
+        URL url = new URL(BASE_URL + userId);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("PUT");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setDoOutput(true);
 
-    public static void main(String[] args) {
-        updateUser(1);
-    }
+        OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
+        Gson gson = new Gson();
+        String requestBody = gson.toJson(updatedUser);
+        writer.write(requestBody);
+        writer.flush();
 
-    public static void updateUser(int userId) {
-        try {
-            URL url = new URL(BASE_URL + "/users/" + userId);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("PUT");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setDoOutput(true);
-
-            String jsonInputString = "{\"id\": 1,\"name\": \"John Doe\",\"username\": \"johndoe\",\"email\": \"johndoe@example.com\"}";
-
-            try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = jsonInputString.getBytes("utf-8");
-                os.write(input, 0, input.length);
-            }
-
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"))) {
-                StringBuilder response = new StringBuilder();
-                String responseLine = null;
-                while ((responseLine = br.readLine()) != null) {
-                    response.append(responseLine.trim());
-                }
-                System.out.println(response.toString());
-            }
-
-            conn.disconnect();
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (conn.getResponseCode() != 200) {
+            throw new RuntimeException("Error : "
+                    + conn.getResponseCode());
         }
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(
+                (conn.getInputStream())));
+        String responseBody = reader.readLine();
+        reader.close();
+
+        conn.disconnect();
+
+        User user = gson.fromJson(responseBody, User.class);
+        return user;
     }
-
 }
-

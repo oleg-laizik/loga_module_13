@@ -4,42 +4,31 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
+import UtilsUser.User;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import java.util.List;
 
 public class UserName {
-    private static final String BASE_URL = "https://jsonplaceholder.typicode.com";
 
-    public static void main(String[] args) {
-        getUserByUsername("Bret");
-    }
+    private static final String BASE_URL = "https://jsonplaceholder.typicode.com/users?username=";
 
-    public static void getUserByUsername(String username) {
-        try {
-            String encodedUsername = URLEncoder.encode(username, "UTF-8");
-            URL url = new URL(BASE_URL + "/users?username=" + encodedUsername);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Accept", "application/json");
-
-            if (conn.getResponseCode() != 200) {
-                throw new RuntimeException("Failed : HTTP error code : "
-                        + conn.getResponseCode());
-            }
-
-            BufferedReader br = new BufferedReader(new InputStreamReader(
-                    (conn.getInputStream())));
-
-            String output;
-            System.out.println("Output from Server \n");
-            while ((output = br.readLine()) != null) {
-                System.out.println(output);
-            }
-
-            conn.disconnect();
-        } catch (Exception e) {
-            e.printStackTrace();
+    public static User getUserByUsername(String username) throws Exception {
+        URL url = new URL(BASE_URL + username);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        String line;
+        StringBuilder response = new StringBuilder();
+        while ((line = reader.readLine()) != null) {
+            response.append(line);
         }
+        reader.close();
+        List<User> users = new Gson().fromJson(response.toString(), new TypeToken<List<User>>(){}.getType());
+        if (users != null && !users.isEmpty()) {
+            return users.get(0);
+        }
+        return null;
     }
-
 }
 
