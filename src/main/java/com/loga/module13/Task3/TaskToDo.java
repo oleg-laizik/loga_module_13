@@ -5,8 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Scanner;
-import com.google.gson.reflect.TypeToken;
+
 import com.google.gson.Gson;
 
 
@@ -18,12 +19,12 @@ public class TaskToDo {
     public static void main(String[] args) throws IOException {
         int userId = 1;
         String fileName = "user-" + userId + "-todos.json";
-        String todosJson = getOpenTodosJsonForUser(userId);
-        writeJsonToFile(todosJson, fileName);
-        System.out.println("Open todos for user " + userId + " were written to file " + fileName);
+        ToDo[] openTodos = getOpenTodosForUser(userId);
+        writeJsonToFile(gson.toJson(openTodos), fileName);
+        System.out.println("Open " + userId + " were written to file " + fileName);
     }
 
-    private static String getOpenTodosJsonForUser(int userId) throws IOException {
+    private static ToDo[] getOpenTodosForUser(int userId) throws IOException {
         String endpoint = BASE_URL + "/users/" + userId + "/todos";
         String responseJson = makeRequest(endpoint);
         ToDo[] todos = gson.fromJson(responseJson, ToDo[].class);
@@ -34,8 +35,7 @@ public class TaskToDo {
                 openTodos[openTodosCount++] = todo;
             }
         }
-        return gson.toJson(openTodos, new TypeToken<ToDo[]>() {
-        }.getType());
+        return Arrays.copyOf(openTodos, openTodosCount);
     }
 
     private static void writeJsonToFile(String json, String fileName) throws IOException {

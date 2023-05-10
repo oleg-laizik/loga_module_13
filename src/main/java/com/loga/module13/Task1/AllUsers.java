@@ -6,20 +6,21 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.List;
 
 import UtilsUser.User;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 public class AllUsers {
     private static final String BASE_URL = "https://jsonplaceholder.typicode.com/users";
 
     public static void main(String[] args) {
-        String usersJson = getDataFromApi(BASE_URL);
-        User[] users = new Gson().fromJson(usersJson, User[].class);
-        System.out.println(Arrays.toString(users));
+        List<User> users = getDataFromApi(BASE_URL);
+        System.out.println(users);
     }
 
-    private static String getDataFromApi(String urlString) {
+    private static List<User> getDataFromApi(String urlString) {
         StringBuilder result = new StringBuilder();
         try {
             URL url = new URL(urlString);
@@ -34,7 +35,6 @@ public class AllUsers {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return result.toString();
+        return new Gson().fromJson(result.toString(), new TypeToken<List<User>>(){}.getType());
     }
 }
-

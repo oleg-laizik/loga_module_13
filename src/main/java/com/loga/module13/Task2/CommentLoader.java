@@ -16,11 +16,20 @@ public class CommentLoader {
 
     public static void main(String[] args) throws IOException {
         int userId = 1;
-        int postId = getLatestPostId(userId);
-        String fileName = "user-" + userId + "-post-" + postId + "-comments.json";
-        String commentsJson = getCommentsJsonForPost(postId);
+        printAndWriteCommentsForLatestPostOfUser(userId);
+    }
+
+    private static void printAndWriteCommentsForLatestPostOfUser(int userId) throws IOException {
+        int latestPostId = getLatestPostId(userId);
+        String endpoint = BASE_URL + "/posts/" + latestPostId + "/comments";
+        String commentsJson = makeRequest(endpoint);
+        String fileName = "user-" + userId + "-post-" + latestPostId + "-comments.json";
         writeJsonToFile(commentsJson, fileName);
-        System.out.println("Comments for user " + userId + " post " + postId + " were written to file " + fileName);
+        System.out.println("Comments for user " + userId + " latest post were written to file " + fileName);
+        Comment[] comments = gson.fromJson(commentsJson, Comment[].class);
+        for (Comment comment : comments) {
+            System.out.println(comment);
+        }
     }
 
     private static int getLatestPostId(int userId) throws IOException {
@@ -34,11 +43,6 @@ public class CommentLoader {
             }
         }
         return latestPost.getId();
-    }
-
-    private static String getCommentsJsonForPost(int postId) throws IOException {
-        String endpoint = BASE_URL + "/posts/" + postId + "/comments";
-        return makeRequest(endpoint);
     }
 
     private static void writeJsonToFile(String json, String fileName) throws IOException {
